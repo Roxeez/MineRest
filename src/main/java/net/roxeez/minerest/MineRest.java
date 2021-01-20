@@ -2,8 +2,9 @@ package net.roxeez.minerest;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.roxeez.minerest.api.Version;
-import net.roxeez.minerest.api.v1.VersionOne;
+import net.roxeez.minerest.api.Controller;
+import net.roxeez.minerest.api.controller.PlayerController;
+import net.roxeez.minerest.api.controller.ServerController;
 import net.roxeez.minerest.http.Status;
 import net.roxeez.minerest.utility.LoggingUtility;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -12,7 +13,7 @@ import java.util.logging.Logger;
 
 import static spark.Spark.*;
 
-public class MineRest extends JavaPlugin
+public final class MineRest extends JavaPlugin
 {
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
@@ -23,7 +24,6 @@ public class MineRest extends JavaPlugin
     @Override
     public void onEnable()
     {
-        logger.info("Saving default configuration");
         saveDefaultConfig();
 
         logger.info("Loading configuration");
@@ -42,40 +42,40 @@ public class MineRest extends JavaPlugin
         {
             logger.info("Enabling request/response debugging");
 
-            before((request, response) -> getLogger().info(LoggingUtility.format(request)));
-            after((request, response) -> getLogger().info(LoggingUtility.format(response)));
+            before((request, response) -> logger.info(LoggingUtility.format(request)));
+            after((request, response) -> logger.info(LoggingUtility.format(response)));
         }
 
-        logger.info("Adding security token check");
-        before((request, response) ->
+        path("/v1", () ->
         {
-            String token = request.headers("X-Access-Token");
-            if (token == null || !token.equals(configuration.getToken()))
+            // Restrict access with token
+            before((request, response) ->
             {
-               halt(Status.FORBIDDEN);
+               String token = request.headers("X-Access-Token");
+               if (token == null || !token.equals(configuration.getToken()))
+               {
+                   halt(Status.FORBIDDEN);
+               }
+            });
+
+            Controller[] controllers = new Controller[]
+            {
+                new PlayerController(getServer(), GSON),
+                new ServerController(getServer(), GSON)
+            };
+
+            logger.info("Mapping controllers");
+            for(Controller controller : controllers)
+            {
+                path(controller.getRoute(), controller::map);
             }
         });
-
-        /*
-        Array containing all supported version of API
-        Made for backward compatibility if we do breaking change in the future
-         */
-        Version[] versions = new Version[]
-        {
-            new VersionOne(getServer(), GSON)
-        };
-
-        logger.info("Mapping all versions endpoints");
-        for(Version version : versions)
-        {
-            logger.info("Mapping " + version.getRoute() + " endpoints");
-            path(version.getRoute(), version::map);
-        }
     }
 
     @Override
     public void onDisable()
     {
+        logger.info("Stopping http server running on port " + port());
         stop();
     }
 }

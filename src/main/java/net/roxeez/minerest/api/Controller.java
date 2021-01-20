@@ -1,6 +1,6 @@
-package net.roxeez.minerest.api.v1;
+package net.roxeez.minerest.api;
 
-import net.roxeez.minerest.api.v1.response.ErrorResponse;
+import net.roxeez.minerest.api.response.ErrorResponse;
 import net.roxeez.minerest.http.ContentType;
 import net.roxeez.minerest.http.Status;
 import spark.Response;

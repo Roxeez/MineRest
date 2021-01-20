@@ -16,7 +16,8 @@ public final class LoggingUtility
                 + request.protocol() + " | "
                 + request.requestMethod() + " | "
                 + request.uri()
-                + (request.body() != null && !request.body().equals("") ? "\r\n" + request.body() : "")
+                + (request.body() != null && !request.body().equals("") ? System.lineSeparator() : "")
+                + (request.body() != null && !request.body().equals("") ? request.body() : "")
                 .trim();
     }
 
@@ -25,7 +26,8 @@ public final class LoggingUtility
         return "RESPONSE | "
                 + response.status() + " | "
                 + (response.type() != null ? response.type() : "text/html")
-                + (response.body() != null && !response.body().equals("") ? "\r\n" + response.body() : "")
+                + (response.body() != null && !response.body().equals("") ? System.lineSeparator() : "")
+                + (response.body() != null && !response.body().equals("") ? response.body() : "")
                 .trim();
     }
 }
