@@ -1,4 +1,4 @@
-package net.roxeez.minerest.api.v1.request;
+package net.roxeez.minerest.api.request;
 
 public class BroadcastRequest
 {

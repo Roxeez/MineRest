@@ -1,10 +1,11 @@
-package net.roxeez.minerest.api.v1.controller;
+package net.roxeez.minerest.api.controller;
 
 import com.google.gson.Gson;
-import net.roxeez.minerest.api.v1.Controller;
-import net.roxeez.minerest.api.v1.request.KickRequest;
-import net.roxeez.minerest.api.v1.response.KickResponse;
-import net.roxeez.minerest.api.v1.response.PlayerResponse;
+import net.roxeez.minerest.api.Controller;
+import net.roxeez.minerest.api.request.KickRequest;
+import net.roxeez.minerest.api.response.KickResponse;
+import net.roxeez.minerest.api.response.object.LocationObject;
+import net.roxeez.minerest.api.response.object.PlayerObject;
 import net.roxeez.minerest.http.ContentType;
 import net.roxeez.minerest.utility.StringUtility;
 import org.bukkit.OfflinePlayer;
@@ -54,12 +55,30 @@ public class PlayerController extends Controller
 
         OfflinePlayer player = server.getOfflinePlayer(name);
 
-        PlayerResponse output = PlayerResponse.builder()
+         PlayerObject.PlayerObjectBuilder builder = PlayerObject.builder()
                 .uuid(player.getUniqueId())
                 .name(player.getName())
-                .build();
+                .online(player.isOnline())
+                .banned(player.isBanned())
+                .op(player.isOp())
+                .firstPlayed(player.getFirstPlayed())
+                .lastPlayed(player.getLastPlayed());
 
-        return Ok(response, output);
+         if (player.isOnline())
+         {
+             Player online = player.getPlayer();
+             LocationObject location = LocationObject.builder()
+                     .world(online.getLocation().getWorld().getName())
+                     .x(online.getLocation().getX())
+                     .y(online.getLocation().getY())
+                     .z(online.getLocation().getZ())
+                     .build();
+
+             builder.gameMode(online.getGameMode());
+             builder.location(location);
+         }
+
+        return Ok(response, builder.build());
     }
 
     private Object getById(Request request, Response response)
@@ -78,12 +97,30 @@ public class PlayerController extends Controller
 
         OfflinePlayer player = server.getOfflinePlayer(uniqueId);
 
-        PlayerResponse output = PlayerResponse.builder()
+        PlayerObject.PlayerObjectBuilder builder = PlayerObject.builder()
                 .uuid(player.getUniqueId())
                 .name(player.getName())
-                .build();
+                .online(player.isOnline())
+                .banned(player.isBanned())
+                .op(player.isOp())
+                .firstPlayed(player.getFirstPlayed())
+                .lastPlayed(player.getLastPlayed());
 
-        return Ok(response, output);
+        if (player.isOnline())
+        {
+            Player online = player.getPlayer();
+            LocationObject location = LocationObject.builder()
+                    .world(online.getLocation().getWorld().getName())
+                    .x(online.getLocation().getX())
+                    .y(online.getLocation().getY())
+                    .z(online.getLocation().getZ())
+                    .build();
+
+            builder.gameMode(online.getGameMode());
+            builder.location(location);
+        }
+
+        return Ok(response, builder.build());
     }
 
     private Object kick(Request request, Response response)

@@ -1,4 +1,4 @@
-package net.roxeez.minerest.api.v1.response;
+package net.roxeez.minerest.api.response;
 
 import lombok.Builder;
 

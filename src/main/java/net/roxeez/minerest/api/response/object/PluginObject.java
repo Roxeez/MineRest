@@ -1,9 +1,9 @@
-package net.roxeez.minerest.api.response;
+package net.roxeez.minerest.api.response.object;
 
 import lombok.Builder;
 
 @Builder
-public class PluginResponse
+public class PluginObject
 {
     private final String name;
     private final String version;

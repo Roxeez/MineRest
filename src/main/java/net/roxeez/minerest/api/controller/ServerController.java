@@ -1,11 +1,11 @@
-package net.roxeez.minerest.api.v1.controller;
+package net.roxeez.minerest.api.controller;
 
 import com.google.gson.Gson;
-import net.roxeez.minerest.api.v1.Controller;
-import net.roxeez.minerest.api.v1.request.BroadcastRequest;
-import net.roxeez.minerest.api.v1.response.BroadcastResponse;
-import net.roxeez.minerest.api.v1.response.PluginResponse;
-import net.roxeez.minerest.api.v1.response.ServerResponse;
+import net.roxeez.minerest.api.Controller;
+import net.roxeez.minerest.api.request.BroadcastRequest;
+import net.roxeez.minerest.api.response.BroadcastResponse;
+import net.roxeez.minerest.api.response.object.PluginObject;
+import net.roxeez.minerest.api.response.ServerResponse;
 import net.roxeez.minerest.http.ContentType;
 import org.bukkit.Server;
 import spark.Request;
@@ -46,12 +46,21 @@ public class ServerController extends Controller
 
     private Object getServer(Request request, Response response)
     {
+        List<PluginObject> plugins = Arrays.stream(server.getPluginManager().getPlugins())
+                .map(x -> PluginObject.builder()
+                        .name(x.getName())
+                        .version(x.getDescription().getVersion())
+                        .build())
+                .collect(Collectors.toList());
+
         ServerResponse output = ServerResponse.builder()
-                .name(server.getName())
+                .name(server.getServerName())
                 .motd(server.getMotd())
                 .version(server.getVersion())
                 .bukkitVersion(server.getBukkitVersion())
-                .gameMode(server.getDefaultGameMode().toString())
+                .players(server.getOnlinePlayers().size())
+                .maxPlayers(server.getMaxPlayers())
+                .plugins(plugins)
                 .build();
 
         return Ok(response, output);
@@ -76,8 +85,8 @@ public class ServerController extends Controller
 
     private Object getPlugins(Request request, Response response)
     {
-        List<PluginResponse> plugins = Arrays.stream(server.getPluginManager().getPlugins())
-                .map(x -> PluginResponse.builder()
+        List<PluginObject> plugins = Arrays.stream(server.getPluginManager().getPlugins())
+                .map(x -> PluginObject.builder()
                         .name(x.getName())
                         .version(x.getDescription().getVersion())
                         .build())
