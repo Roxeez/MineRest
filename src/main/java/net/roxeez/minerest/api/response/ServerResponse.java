@@ -8,7 +8,6 @@ import java.util.List;
 @Builder
 public class ServerResponse
 {
-    private final String name;
     private final String motd;
     private final String version;
     private final String bukkitVersion;

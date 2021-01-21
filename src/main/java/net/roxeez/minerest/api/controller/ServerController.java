@@ -54,7 +54,6 @@ public class ServerController extends Controller
                 .collect(Collectors.toList());
 
         ServerResponse output = ServerResponse.builder()
-                .name(server.getServerName())
                 .motd(server.getMotd())
                 .version(server.getVersion())
                 .bukkitVersion(server.getBukkitVersion())

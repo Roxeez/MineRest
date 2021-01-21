@@ -1,5 +1,5 @@
 name: MineRest
 version: 1.0
-
+api-version: 1.16
 author: Roxeez
 main: net.roxeez.minerest.MineRest
