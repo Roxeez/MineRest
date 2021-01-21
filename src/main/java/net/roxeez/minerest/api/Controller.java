@@ -1,5 +1,7 @@
 package net.roxeez.minerest.api;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import net.roxeez.minerest.api.response.ErrorResponse;
 import net.roxeez.minerest.http.GET;
 import net.roxeez.minerest.http.POST;
@@ -16,6 +18,10 @@ import static spark.Spark.halt;
 
 public abstract class Controller
 {
+    protected static final Gson GSON = new GsonBuilder()
+            .setPrettyPrinting()
+            .create();
+
     public abstract String getRoute();
 
     public void map(TokenManager manager)
@@ -28,6 +34,8 @@ public abstract class Controller
             GET get = method.getAnnotation(GET.class);
             if (get != null)
             {
+                method.setAccessible(true);
+
                 if (secured)
                 {
                     Spark.before(get.path(), ((request, response) ->
@@ -35,7 +43,7 @@ public abstract class Controller
                         String token = request.headers("X-Access-Token");
                         Set<String> permissions = manager.getTokenPermissions(token);
 
-                        if (!permissions.contains(get.path()))
+                        if (!permissions.contains(getRoute() + get.path()))
                         {
                             halt(Status.FORBIDDEN);
                         }
@@ -45,13 +53,23 @@ public abstract class Controller
                 Spark.get(get.path(), (request, response) ->
                 {
                     response.type(get.type().toString());
-                    return method.invoke(this, request, response);
+
+                    Object object = method.invoke(this, request, response);
+                    switch (get.type())
+                    {
+                        case APPLICATION_JSON:
+                            return GSON.toJson(object);
+                        default:
+                            return object;
+                    }
                 });
             }
 
             POST post = method.getAnnotation(POST.class);
             if (post != null)
             {
+                method.setAccessible(true);
+
                 if (secured)
                 {
                     Spark.before(post.path(), ((request, response) ->
@@ -59,7 +77,7 @@ public abstract class Controller
                         String token = request.headers("X-Access-Token");
                         Set<String> permissions = manager.getTokenPermissions(token);
 
-                        if (!permissions.contains(post.path()))
+                        if (!permissions.contains(getRoute() + post.path()))
                         {
                             halt(Status.FORBIDDEN);
                         }
@@ -69,7 +87,15 @@ public abstract class Controller
                 Spark.post(post.path(), post.requiredType().toString(), (request, response) ->
                 {
                     response.type(post.type().toString());
-                    return method.invoke(this, request, response);
+
+                    Object object = method.invoke(this, request, response);
+                    switch (post.type())
+                    {
+                        case APPLICATION_JSON:
+                            return GSON.toJson(object);
+                        default:
+                            return object;
+                    }
                 });
             }
         }

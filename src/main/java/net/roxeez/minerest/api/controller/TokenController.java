@@ -16,12 +16,10 @@ import java.util.UUID;
 public class TokenController extends Controller
 {
     private final TokenManager manager;
-    private final Gson gson;
 
-    public TokenController(TokenManager manager, Gson gson)
+    public TokenController(TokenManager manager)
     {
         this.manager = manager;
-        this.gson = gson;
     }
 
     @Override
@@ -34,7 +32,7 @@ public class TokenController extends Controller
     @POST(path = "/create", requiredType = ContentType.APPLICATION_JSON, type = ContentType.APPLICATION_JSON)
     private Object create(Request request, Response response)
     {
-        CreateTokenRequest input = gson.fromJson(request.body(), CreateTokenRequest.class);
+        CreateTokenRequest input = GSON.fromJson(request.body(), CreateTokenRequest.class);
         if (input == null)
         {
             return BadRequest(response, "Unable to parse request");

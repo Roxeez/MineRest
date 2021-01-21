@@ -21,12 +21,10 @@ import java.util.stream.Collectors;
 public class ServerController extends Controller
 {
     private final Server server;
-    private final Gson gson;
 
-    public ServerController(Server server, Gson gson)
+    public ServerController(Server server)
     {
         this.server = server;
-        this.gson = gson;
     }
 
     @Override
@@ -61,7 +59,7 @@ public class ServerController extends Controller
     @POST(path = "/broadcast", type = ContentType.APPLICATION_JSON, requiredType = ContentType.APPLICATION_JSON)
     private Object broadcast(Request request, Response response)
     {
-        BroadcastRequest input = gson.fromJson(request.body(), BroadcastRequest.class);
+        BroadcastRequest input = GSON.fromJson(request.body(), BroadcastRequest.class);
         if (input == null)
         {
             return BadRequest(response, "Unable to parse request");

@@ -22,12 +22,10 @@ import java.util.UUID;
 public class PlayerController extends Controller
 {
     private final Server server;
-    private final Gson gson;
 
-    public PlayerController(Server server, Gson gson)
+    public PlayerController(Server server)
     {
         this.server = server;
-        this.gson = gson;
     }
 
     @Override
@@ -120,7 +118,7 @@ public class PlayerController extends Controller
     @POST(path = "/kick", requiredType = ContentType.APPLICATION_JSON, type = ContentType.APPLICATION_JSON)
     private Object kick(Request request, Response response)
     {
-        KickRequest input = gson.fromJson(request.body(), KickRequest.class);
+        KickRequest input = GSON.fromJson(request.body(), KickRequest.class);
         if (input == null)
         {
             return BadRequest(response, "Unable to parse request");
