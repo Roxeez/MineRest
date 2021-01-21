@@ -6,9 +6,17 @@ import net.roxeez.minerest.api.Controller;
 import net.roxeez.minerest.api.controller.PlayerController;
 import net.roxeez.minerest.api.controller.ServerController;
 import net.roxeez.minerest.http.Status;
+import net.roxeez.minerest.security.Secured;
+import net.roxeez.minerest.security.TokenManager;
 import net.roxeez.minerest.utility.LoggingUtility;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import static spark.Spark.*;
@@ -19,26 +27,30 @@ public final class MineRest extends JavaPlugin
             .setPrettyPrinting()
             .create();
 
-    private final Logger logger = getLogger();
+    private final Logger logger;
+    private final TokenManager tokenManager;
+
+    public MineRest()
+    {
+        this.logger = getLogger();
+        this.tokenManager = new TokenManager(getLogger(), new File(getDataFolder(), "tokens.yml"));
+    }
 
     @Override
     public void onEnable()
     {
         saveDefaultConfig();
 
-        logger.info("Loading configuration");
-        Configuration configuration = Configuration.from(getConfig());
+        logger.info("Loading token manager");
+        tokenManager.load();
 
-        if (configuration.getToken() == null)
-        {
-            logger.severe("Token is not defined in config.yml, http server won't start");
-            return;
-        }
+        int port = getConfig().getInt("port", 5555);
 
-        logger.info("Starting http server on port " + configuration.getPort());
-        port(configuration.getPort());
+        logger.info("Starting http server on port " + port);
+        port(port);
 
-        if (configuration.isDebug())
+        boolean debug = getConfig().getBoolean("debug");
+        if (debug)
         {
             logger.info("Enabling request/response debugging");
 
@@ -48,16 +60,6 @@ public final class MineRest extends JavaPlugin
 
         path("/v1", () ->
         {
-            // Restrict access with token
-            before((request, response) ->
-            {
-               String token = request.headers("X-Access-Token");
-               if (token == null || !token.equals(configuration.getToken()))
-               {
-                   halt(Status.FORBIDDEN);
-               }
-            });
-
             Controller[] controllers = new Controller[]
             {
                 new PlayerController(getServer(), GSON),
@@ -67,7 +69,25 @@ public final class MineRest extends JavaPlugin
             logger.info("Mapping controllers");
             for(Controller controller : controllers)
             {
-                path(controller.getRoute(), controller::map);
+                boolean secured = controller.getClass().isAnnotationPresent(Secured.class);
+
+                path(controller.getRoute(), () ->
+                {
+                    if (secured)
+                    {
+                        before((request, response) ->
+                        {
+                            String token = request.headers("X-Access-Token");
+                            Set<String> permissions = tokenManager.getTokenPermissions(token);
+
+                            if (!permissions.contains(controller.getRoute()))
+                            {
+                                halt(Status.FORBIDDEN);
+                            }
+                        });
+                    }
+                    controller.map(tokenManager);
+                });
             }
         });
     }
@@ -75,6 +95,9 @@ public final class MineRest extends JavaPlugin
     @Override
     public void onDisable()
     {
+        logger.info("Saving token manager");
+        tokenManager.save();
+
         logger.info("Stopping http server running on port " + port());
         stop();
     }

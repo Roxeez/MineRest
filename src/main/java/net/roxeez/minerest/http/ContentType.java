@@ -1,12 +1,20 @@
 package net.roxeez.minerest.http;
 
-public class ContentType
+public enum ContentType
 {
-    private ContentType()
-    {
+    APPLICATION_JSON("application/json"),
+    TEXT_HTML("text/html");
 
+    private final String value;
+
+    ContentType(String value)
+    {
+        this.value = value;
     }
 
-    public static final String APPLICATION_JSON = "application/json";
-    public static final String TEXT_HTML = "text/html";
+    @Override
+    public String toString()
+    {
+        return value;
+    }
 }

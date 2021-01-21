@@ -7,6 +7,9 @@ import net.roxeez.minerest.api.response.BroadcastResponse;
 import net.roxeez.minerest.api.response.object.PluginObject;
 import net.roxeez.minerest.api.response.ServerResponse;
 import net.roxeez.minerest.http.ContentType;
+import net.roxeez.minerest.http.GET;
+import net.roxeez.minerest.http.POST;
+import net.roxeez.minerest.security.Secured;
 import org.bukkit.Server;
 import spark.Request;
 import spark.Response;
@@ -14,9 +17,6 @@ import spark.Response;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static spark.Spark.get;
-import static spark.Spark.post;
 
 public class ServerController extends Controller
 {
@@ -35,15 +35,7 @@ public class ServerController extends Controller
         return "/server";
     }
 
-    @Override
-    public void map()
-    {
-        get("/", this::getServer, gson::toJson);
-        get("/plugins", this::getPlugins, gson::toJson);
-
-        post("/broadcast", ContentType.APPLICATION_JSON, this::broadcast, gson::toJson);
-    }
-
+    @GET(type = ContentType.APPLICATION_JSON)
     private Object getServer(Request request, Response response)
     {
         List<PluginObject> plugins = Arrays.stream(server.getPluginManager().getPlugins())
@@ -65,6 +57,8 @@ public class ServerController extends Controller
         return Ok(response, output);
     }
 
+    @Secured
+    @POST(path = "/broadcast", type = ContentType.APPLICATION_JSON, requiredType = ContentType.APPLICATION_JSON)
     private Object broadcast(Request request, Response response)
     {
         BroadcastRequest input = gson.fromJson(request.body(), BroadcastRequest.class);
@@ -82,6 +76,7 @@ public class ServerController extends Controller
         return Ok(response, output);
     }
 
+    @GET(path = "/plugins", type = ContentType.APPLICATION_JSON)
     private Object getPlugins(Request request, Response response)
     {
         List<PluginObject> plugins = Arrays.stream(server.getPluginManager().getPlugins())

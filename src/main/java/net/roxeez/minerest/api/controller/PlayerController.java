@@ -7,6 +7,9 @@ import net.roxeez.minerest.api.response.KickResponse;
 import net.roxeez.minerest.api.response.object.LocationObject;
 import net.roxeez.minerest.api.response.object.PlayerObject;
 import net.roxeez.minerest.http.ContentType;
+import net.roxeez.minerest.http.GET;
+import net.roxeez.minerest.http.POST;
+import net.roxeez.minerest.security.Secured;
 import net.roxeez.minerest.utility.StringUtility;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
@@ -15,9 +18,6 @@ import spark.Request;
 import spark.Response;
 
 import java.util.UUID;
-
-import static spark.Spark.get;
-import static spark.Spark.post;
 
 public class PlayerController extends Controller
 {
@@ -36,16 +36,8 @@ public class PlayerController extends Controller
         return "/player";
     }
 
-    @Override
-    public void map()
-    {
-        get("/by-name/:name", this::getByName, gson::toJson);
-        get("/by-id/:id", this::getById, gson::toJson);
-
-        post("/kick", ContentType.APPLICATION_JSON, this::kick, gson::toJson);
-    }
-
-    public Object getByName(Request request, Response response)
+    @GET(path = "/by-name/:name", type = ContentType.APPLICATION_JSON)
+    private Object getByName(Request request, Response response)
     {
         String name = request.params(":name");
         if (name == null)
@@ -64,23 +56,24 @@ public class PlayerController extends Controller
                 .firstPlayed(player.getFirstPlayed())
                 .lastPlayed(player.getLastPlayed());
 
-         if (player.isOnline())
-         {
-             Player online = player.getPlayer();
-             LocationObject location = LocationObject.builder()
-                     .world(online.getLocation().getWorld().getName())
-                     .x(online.getLocation().getX())
-                     .y(online.getLocation().getY())
-                     .z(online.getLocation().getZ())
-                     .build();
+        Player online = player.getPlayer();
+        if (online != null)
+        {
+            LocationObject location = LocationObject.builder()
+                    .world(online.getLocation().getWorld().getName())
+                    .x(online.getLocation().getX())
+                    .y(online.getLocation().getY())
+                    .z(online.getLocation().getZ())
+                    .build();
 
-             builder.gameMode(online.getGameMode());
-             builder.location(location);
-         }
+            builder.gameMode(online.getGameMode());
+            builder.location(location);
+        }
 
         return Ok(response, builder.build());
     }
 
+    @GET(path = "/by-id/:id", type = ContentType.APPLICATION_JSON)
     private Object getById(Request request, Response response)
     {
         String id = request.params(":id");
@@ -106,9 +99,9 @@ public class PlayerController extends Controller
                 .firstPlayed(player.getFirstPlayed())
                 .lastPlayed(player.getLastPlayed());
 
-        if (player.isOnline())
+        Player online = player.getPlayer();
+        if (online != null)
         {
-            Player online = player.getPlayer();
             LocationObject location = LocationObject.builder()
                     .world(online.getLocation().getWorld().getName())
                     .x(online.getLocation().getX())
@@ -123,6 +116,8 @@ public class PlayerController extends Controller
         return Ok(response, builder.build());
     }
 
+    @Secured
+    @POST(path = "/kick", requiredType = ContentType.APPLICATION_JSON, type = ContentType.APPLICATION_JSON)
     private Object kick(Request request, Response response)
     {
         KickRequest input = gson.fromJson(request.body(), KickRequest.class);
