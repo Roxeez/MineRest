@@ -7,12 +7,11 @@ import net.roxeez.minerest.http.GET;
 import net.roxeez.minerest.http.POST;
 import net.roxeez.minerest.security.Secured;
 import net.roxeez.minerest.http.Status;
-import net.roxeez.minerest.security.TokenManager;
+import net.roxeez.minerest.security.PermissionManager;
 import spark.Response;
 import spark.Spark;
 
 import java.lang.reflect.Method;
-import java.util.Set;
 
 import static spark.Spark.halt;
 
@@ -24,26 +23,30 @@ public abstract class Controller
 
     public abstract String getRoute();
 
-    public void map(TokenManager manager)
+    public void map(PermissionManager manager)
     {
         Method[] methods = getClass().getDeclaredMethods();
         for(Method method : methods)
         {
-            boolean secured = method.isAnnotationPresent(Secured.class);
+            Secured secured = method.getAnnotation(Secured.class);
 
             GET get = method.getAnnotation(GET.class);
             if (get != null)
             {
                 method.setAccessible(true);
 
-                if (secured)
+                if (secured != null)
                 {
                     Spark.before(get.path(), ((request, response) ->
                     {
                         String token = request.headers("X-Access-Token");
-                        Set<String> permissions = manager.getTokenPermissions(token);
+                        if (token == null)
+                        {
+                            halt(Status.FORBIDDEN);
+                        }
 
-                        if (!permissions.contains(getRoute() + get.path()))
+                        boolean allowed = manager.hasPermission(token, secured.value());
+                        if (!allowed)
                         {
                             halt(Status.FORBIDDEN);
                         }
@@ -70,14 +73,18 @@ public abstract class Controller
             {
                 method.setAccessible(true);
 
-                if (secured)
+                if (secured != null)
                 {
                     Spark.before(post.path(), ((request, response) ->
                     {
                         String token = request.headers("X-Access-Token");
-                        Set<String> permissions = manager.getTokenPermissions(token);
+                        if (token == null)
+                        {
+                            halt(Status.FORBIDDEN);
+                        }
 
-                        if (!permissions.contains(getRoute() + post.path()))
+                        boolean allowed = manager.hasPermission(token, secured.value());
+                        if (!allowed)
                         {
                             halt(Status.FORBIDDEN);
                         }

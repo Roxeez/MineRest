@@ -1,19 +1,15 @@
 package net.roxeez.minerest;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import net.roxeez.minerest.api.Controller;
+import net.roxeez.minerest.api.ControllerManager;
 import net.roxeez.minerest.api.controller.PlayerController;
 import net.roxeez.minerest.api.controller.ServerController;
 import net.roxeez.minerest.api.controller.TokenController;
-import net.roxeez.minerest.http.Status;
-import net.roxeez.minerest.security.Secured;
-import net.roxeez.minerest.security.TokenManager;
+import net.roxeez.minerest.security.PermissionManager;
 import net.roxeez.minerest.utility.LoggingUtility;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import static spark.Spark.*;
@@ -21,12 +17,14 @@ import static spark.Spark.*;
 public final class MineRest extends JavaPlugin
 {
     private final Logger logger;
-    private final TokenManager tokenManager;
+    private final PermissionManager permissionManager;
+    private final ControllerManager controllerManager;
 
     public MineRest()
     {
         this.logger = getLogger();
-        this.tokenManager = new TokenManager(getLogger(), new File(getDataFolder(), "tokens.yml"));
+        this.permissionManager = new PermissionManager(getLogger(), new File(getDataFolder(), "tokens.yml"));
+        this.controllerManager = new ControllerManager(permissionManager);
     }
 
     @Override
@@ -35,7 +33,7 @@ public final class MineRest extends JavaPlugin
         saveDefaultConfig();
 
         logger.info("Loading token manager");
-        tokenManager.load();
+        permissionManager.load();
 
         int port = getConfig().getInt("port", 5555);
 
@@ -51,48 +49,29 @@ public final class MineRest extends JavaPlugin
             after((request, response) -> logger.info(LoggingUtility.format(response)));
         }
 
-        path("/v1", () ->
+        Controller[] controllers = new Controller[]
         {
-            Controller[] controllers = new Controller[]
-            {
-                new PlayerController(getServer()),
-                new ServerController(getServer()),
-                new TokenController(tokenManager)
-            };
+            new PlayerController(getServer()),
+            new ServerController(getServer()),
+            new TokenController(permissionManager)
+        };
 
-            logger.info("Mapping controllers");
-            for(Controller controller : controllers)
-            {
-                boolean secured = controller.getClass().isAnnotationPresent(Secured.class);
-
-                path(controller.getRoute(), () ->
-                {
-                    if (secured)
-                    {
-                        before((request, response) ->
-                        {
-                            String token = request.headers("X-Access-Token");
-                            Set<String> permissions = tokenManager.getTokenPermissions(token);
-
-                            if (!permissions.contains(controller.getRoute()))
-                            {
-                                halt(Status.FORBIDDEN);
-                            }
-                        });
-                    }
-                    controller.map(tokenManager);
-                });
-            }
-        });
+        logger.info("Mapping built-in controllers");
+        controllerManager.map(controllers);
     }
 
     @Override
     public void onDisable()
     {
         logger.info("Saving token manager");
-        tokenManager.save();
+        permissionManager.save();
 
         logger.info("Stopping http server running on port " + port());
         stop();
+    }
+
+    public ControllerManager getControllerManager()
+    {
+        return controllerManager;
     }
 }

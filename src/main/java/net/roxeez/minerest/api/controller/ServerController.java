@@ -55,7 +55,7 @@ public class ServerController extends Controller
         return Ok(response, output);
     }
 
-    @Secured
+    @Secured("server.broadcast")
     @POST(path = "/broadcast", type = ContentType.APPLICATION_JSON, requiredType = ContentType.APPLICATION_JSON)
     private Object broadcast(Request request, Response response)
     {

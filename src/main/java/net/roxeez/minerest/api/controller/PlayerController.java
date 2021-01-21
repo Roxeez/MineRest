@@ -114,7 +114,7 @@ public class PlayerController extends Controller
         return Ok(response, builder.build());
     }
 
-    @Secured
+    @Secured("player.kick")
     @POST(path = "/kick", requiredType = ContentType.APPLICATION_JSON, type = ContentType.APPLICATION_JSON)
     private Object kick(Request request, Response response)
     {
