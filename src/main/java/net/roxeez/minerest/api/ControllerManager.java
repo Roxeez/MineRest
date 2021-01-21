@@ -5,15 +5,18 @@ import net.roxeez.minerest.security.Secured;
 import net.roxeez.minerest.security.PermissionManager;
 
 import java.util.Set;
+import java.util.logging.Logger;
 
 import static spark.Spark.*;
 
 public class ControllerManager
 {
+    private final Logger logger;
     private final PermissionManager permissionManager;
 
-    public ControllerManager(PermissionManager manager)
+    public ControllerManager(Logger logger, PermissionManager manager)
     {
+        this.logger = logger;
         this.permissionManager = manager;
     }
 
@@ -43,7 +46,8 @@ public class ControllerManager
                     });
                 }
 
-                controller.map(permissionManager);
+                logger.info("Mapping " + controller.getRoute() + " controller");
+                controller.map(logger, permissionManager);
             });
         });
     }

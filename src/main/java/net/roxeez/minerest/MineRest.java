@@ -24,7 +24,7 @@ public final class MineRest extends JavaPlugin
     {
         this.logger = getLogger();
         this.permissionManager = new PermissionManager(getLogger(), new File(getDataFolder(), "tokens.yml"));
-        this.controllerManager = new ControllerManager(permissionManager);
+        this.controllerManager = new ControllerManager(getLogger(), permissionManager);
     }
 
     @Override

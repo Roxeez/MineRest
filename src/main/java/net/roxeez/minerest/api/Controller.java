@@ -12,6 +12,7 @@ import spark.Response;
 import spark.Spark;
 
 import java.lang.reflect.Method;
+import java.util.logging.Logger;
 
 import static spark.Spark.halt;
 
@@ -23,7 +24,7 @@ public abstract class Controller
 
     public abstract String getRoute();
 
-    public void map(PermissionManager manager)
+    public void map(Logger logger, PermissionManager manager)
     {
         Method[] methods = getClass().getDeclaredMethods();
         for(Method method : methods)
@@ -66,6 +67,8 @@ public abstract class Controller
                             return object;
                     }
                 });
+
+                logger.info("Route " + getRoute() + get.path() + " mapped to " + getClass().getSimpleName() + "#" + method.getName());
             }
 
             POST post = method.getAnnotation(POST.class);
@@ -104,6 +107,8 @@ public abstract class Controller
                             return object;
                     }
                 });
+
+                logger.info("Route " + getRoute() + post.path() + " mapped to " + getClass().getSimpleName() + "#" + method.getName());
             }
         }
     }

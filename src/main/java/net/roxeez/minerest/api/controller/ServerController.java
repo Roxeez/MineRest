@@ -1,6 +1,5 @@
 package net.roxeez.minerest.api.controller;
 
-import com.google.gson.Gson;
 import net.roxeez.minerest.api.Controller;
 import net.roxeez.minerest.api.request.BroadcastRequest;
 import net.roxeez.minerest.api.response.BroadcastResponse;
